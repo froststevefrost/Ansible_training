@@ -1,4 +1,4 @@
-# ansible
+# Ansible
 
 Creating lesson plans for Ansible.
 
