@@ -1,0 +1,31 @@
+---                                                       # All YAML files start with three dashes. Indentation (whitespace) is important. Attention to detail!
+ - name: Install Apache                                   # Displayed on the terminal as the name of the playbook
+   hosts: all                                             # Specifies the hosts you want to run the playbook on 
+   become: true                                           # States that we want to become a privileged user, if nothing provided, uses "root"
+
+   tasks:                                                 # Starts the tasks
+    - name: Install Apache                                # Name of this specific subtask
+      yum:                                                # States we want to use the "yum" module in Ansible
+          name:                                           # This is where we specify the names of the products we want
+              - httpd                                     # We want the httpd program to be present
+              - httpd-devel                               # We want httpd-devel to be present
+          state: present                                  # "present" means if the program names provided above are not installed, install them. Otherwise, do nothing. Similarly, use "absent" to remove.
+      
+    - name: Copy configuration files.                     # Name of the second task
+      copy:                                               # Indicates that we want to use the "copy" module in Ansible
+          src: "{{ item.src }}"                           # Mustaches say we want to use the src defined below
+          dest: "{{ item.dest }}"                         # Mustaches say we want to use the destination defined below
+          owner: root                                     # Changes the owner of the file to this user
+          group: root                                     # Changes the group of the file to this group
+          mode: 0644                                      # Changes the permssions of the file to this octal
+      with_items:                                         # Means we want to use the following items (files)
+          - src: httpd.conf                               # First file we want to copy
+            dest: /etc/httpd/conf/httpd.conf              # Where are we goign to copy the file to
+          - src: httpd-vhosts.conf                        # Second file we want to copy
+            dest: /etc/httpd/conf/httpd-vhosts.conf       # Where are we going to copy the file to
+
+    - name: Make sure Apache is started now and at boot.  # Name of this last subtask
+      service:                                            # Indicates we want to use the "service" module in Ansible
+          name: httpd                                     # Name of the service we're trying to target
+          state: started                                  # Check the status of the service; if its not started, start it. If it is, do nothing.
+          enabled: true                                   # Check if the service is enabled at startup. If not, enable it. If it is, do nothing.

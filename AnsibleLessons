@@ -1,0 +1,194 @@
+All About Ansible (Also, Always Avoid Alliteration)
+
+################################################################################
+
+- Topics:
+    -- Definition
+    -- Target functions
+    -- What Ansible aims to be
+    -- Common terms
+    -- Installation
+    -- Examples
+
+################################################################################
+
+- What is Ansible?
+    -- "Ansible is a radically simple IT automation engine that automates cloud provisioning, configuration management, application deployment, intra-service orchestration, and many other IT needs." (Ansible.com, 2020)
+    -- Basically, it automates all aspects of our job
+
+
+- Ansible has 3 target functions: 
+    -- ad-hoc task execution 
+    -- configuration management
+    -- server deployment
+    
+
+- Aims to be:
+    -- Clear
+        --- Uses YAML, which is easy to read and easily followed
+        --- APIs are simple & sensible
+
+    -- Fast
+        --- Fast to learn, fast to set up
+        --- No additional agents or daemons on any system
+        --- Convert any script to a Ansible playbook
+
+    -- Complete
+        --- Everything necessary for Ansible is included in the install package
+        --- No additional downloads or installations
+
+    -- Efficient
+        --- No additional packages = fewer resources needed
+        --- Run commands on multiple servers at the same time from a single line
+
+    -- Secure
+        --- Uses SSH to communicate with target systems (RHEL7+)
+
+################################################################################
+
+- Common terms
+    -- ad-hoc
+        --- Code that you run as a one-off (ie: grab the IP from each system)
+        --- Arguments can be called in any order 
+            EXAMPLE:
+                ansible db -a "hostname"
+                     is equal to   
+                ansible -a "hostname" db
+
+    -- inventory
+        --- Similiar to the /etc/hosts or C:\Windows\System32\drivers\etc\hosts
+        --- Just as the name suggests, its a collection of all the systems you manage
+        --- Organized in a way that allows changes to a single system or multitudes.
+
+    -- playbook
+        --- Reusable block of code
+        --- Similar to a bash script or powershell .ps1
+
+    -- modules
+        --- Bread and butter of ad-hoc commands
+        --- specifies the command you want to run
+        --- Integrates with VMware (50+), Windows (100+), RHEL, NetApp, Splunk, and many others
+        --- Examples:
+            ping, shell, hostname, reboot, etc.
+
+
+################################################################################
+
+- Installation
+    -- On RHEL:
+        # yum -y install ansible
+
+    -- On Windows:
+    	--- Install Linux then follow previous command.
+
+    -- Verify installation with:
+        $ ansible --version
+        
+
+######################  Ad-Hoc Commands  #################################################
+    
+    $ ansible db -a "hostname"              # Run the "hostname" command on the "db" group
+    $ ansible -a "free -m" multi            # Order of arguments doesn't matter 
+    $ ansible -a "df -h" 192.168.60.21      # Can run on a single IP
+    $ ansible admin -a "date" -i inventory  # Explicity state where the inventory file is
+
+######################  Inventory file  ##################################################
+
+    [admin]
+    192.168.60.10
+    192.168.60.11
+    192.168.60.12
+
+    [db]
+    192.168.60.21
+    192.168.60.22
+
+    [webserver]
+    192.168.60.31
+    192.168.60.32
+    192.168.60.13
+
+    [multi:children]
+    admin
+    db
+    webserver
+
+
+    [admin:vars]
+    ansible_user=admin
+    ansible_ssh_private_key_file=/storage/keys/admin.pem
+
+    [db:vars]
+    ansible_user=db_root
+    ansible_ssh_private_key_file=/storage/keys/db.pem
+
+    [webserver:vars]
+    ansible_user=root
+    ansible_ssh_private_key_file=/storage/keys/webserver.pem
+
+######################  Playbook  ########################################################
+
+---
+- hosts: admin
+  become: yes
+
+  tasks:
+    - name: Ensure Chrony (for time synchronization) is installed.
+      yum:
+        name: chrony
+        state: present
+
+    - name: Ensure Chrony is running.
+      service:
+        name: chronyd
+        state: started
+        enabled: yes
+
+                
+######################  Real life example  ###############################################
+
+- Task 1: Create a group on all of our application servers with the name of "admin".
+
+    -- Via Ad-hoc command:
+
+        $ ansible app -b -m group -a "name=admin state=present"
+
+            # app indicates our target system(s)
+            # -b states that you want to become root
+            # -m specifies the module you want; group in this case.
+            # -a gives the arguments to the group module; in this case we're making an admin group
+
+
+
+    -- Via Playbook:
+        ---
+        - hosts: app
+
+          tasks:
+            - name: Create the admin group
+              group:
+                name: admin
+                state: present
+            become: yes
+
+------------------------------------------------------------------------------------------
+- Task 2: Create a user on all of our admin servers
+    
+    -- Via Ad-hoc command:
+
+        $ ansible app -b -m user -a "name=jamesbond group=admin createhome=yes shell=/bin/bash"
+
+
+    -- Via Playbook:
+        ---
+        - hosts: admin
+
+          tasks:
+            - name: Create the user jamesbond
+              user:
+                name: jamesbond
+                state: present
+                group: admin
+                createhome: yes
+                shell: /bin/bash
+            become: yes
