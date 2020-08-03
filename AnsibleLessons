@@ -13,7 +13,8 @@ All About Ansible (Also, Always Avoid Alliteration)
 ################################################################################
 
 - What is Ansible?
-    -- "Ansible is a radically simple IT automation engine that automates cloud provisioning, configuration management, application deployment, intra-service orchestration, and many other IT needs." (Ansible.com, 2020)
+    -- "Ansible is a radically simple IT automation engine that automates cloud provisioning, configuration management, 
+        application deployment, intra-service orchestration, and many other IT needs." (Ansible.com, 2020)
     -- Basically, it automates all aspects of our job
 
 
